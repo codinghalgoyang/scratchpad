@@ -1,54 +1,65 @@
 ## 카카오 인증 with supabace
 
+## 전체 흐름이 어떻게 될까?
+
+- http의 요청에 대한 응답은 해당 요청을 받은 서버에서만 가능한데, 상세한 흐름이 어떻게 될까?
+- 핵심은 브라우저가 next.js server, supbase server, kakao server의 중개기 역할임.
+
+Next.js + Supabase에서 Kakao 로그인의 전체 흐름을 요청-응답 쌍으로 자세히 설명해드리겠습니다:
+
+1. 로그인 시작 단계
+   요청: 사용자 브라우저 → Next.js 앱
+   • GET /login (로그인 페이지 접근)
+   응답: Next.js 앱 → 사용자 브라우저
+   • 로그인 페이지 HTML + “카카오 로그인” 버튼
+2. OAuth 인증 시작
+   요청: 사용자 브라우저 → Supabase
+   • POST /auth/v1/authorize (signInWithOAuth 호출)
+   • body: { provider: 'kakao', options: { redirectTo: 'http://localhost:3000/auth/callback' } }
+   응답: Supabase → 사용자 브라우저
+   • 302 Redirect to https://kauth.kakao.com/oauth/authorize?client_id=...&redirect_uri=...&response_type=code
+3. 카카오 인증
+   요청: 사용자 브라우저 → 카카오 인증 서버
+   • GET https://kauth.kakao.com/oauth/authorize?...
+   응답: 카카오 인증 서버 → 사용자 브라우저
+   • 카카오 로그인 페이지 HTML
+   요청: 사용자 브라우저 → 카카오 인증 서버
+   • POST https://kauth.kakao.com/oauth/authorize (사용자가 로그인 정보 입력)
+   응답: 카카오 인증 서버 → 사용자 브라우저
+   • 302 Redirect to https://your-supabase-project.supabase.co/auth/v1/callback?code=...&state=...
+4. Supabase 콜백 처리
+   요청: 사용자 브라우저 → Supabase
+   • GET https://your-supabase-project.supabase.co/auth/v1/callback?code=...
+   내부 처리: Supabase가 카카오와 토큰 교환
+   • Supabase → 카카오: authorization code를 access token으로 교환
+   • Supabase → 카카오: access token으로 사용자 정보 조회
+   응답: Supabase → 사용자 브라우저
+   • 302 Redirect to http://localhost:3000/auth/callback#access_token=...&refresh_token=...
+5. Next.js 콜백 처리
+   요청: 사용자 브라우저 → Next.js 앱
+   • GET /auth/callback#access_token=... (fragment로 토큰 전달)
+   응답: Next.js 앱 → 사용자 브라우저
+   • 콜백 페이지 HTML + JavaScript (토큰을 추출하고 세션 설정)
+6. 세션 확인 및 리다이렉트
+   요청: Next.js 클라이언트 → Supabase (JavaScript SDK)
+   • POST /auth/v1/token (토큰 검증 및 사용자 정보 조회)
+   응답: Supabase → Next.js 클라이언트
+   • 사용자 세션 정보 JSON
+   요청: 사용자 브라우저 → Next.js 앱
+   • GET /dashboard (로그인 후 리다이렉트)
+   응답: Next.js 앱 → 사용자 브라우저
+   • 대시보드 페이지 HTML
+   핵심 포인트: 1. 서버 간 직접 통신 불가: 브라우저가 중개 역할을 하며, 각 서버는 자신이 받은 요청에만 응답합니다. 2. 리다이렉트 체인: OAuth는 여러 서버 간의 리다이렉트 체인으로 구성됩니다.
+   • Next.js → Supabase → 카카오 → Supabase → Next.js 3. 토큰 전달 방식:
+   • Authorization code는 URL parameter로
+   • Access token은 URL fragment(#)로 전달되어 서버에 노출되지 않음 4. 상태 관리: 각 단계에서 state 파라미터로 CSRF 방지 및 상태 추적
+   이런 복잡한 흐름이 필요한 이유는 보안상 서버 간 직접 통신 없이도 안전하게 인증을 처리하기 위함입니다.​​​​​​​​​​​​​​​​
+
+---
+
 > supabase에서 나 대신 인증을 하고(supabse <-> kakao), 내 사이트를 redirection url로 해서 인증 결과를 받고, 인증 관련 database등은 supabase에서 관리해줌.
 
 자료 : https://euni8917.tistory.com/m/575
-
-```mermaid
-sequenceDiagram
-    participant User as 사용자
-    participant SignIn as SignIn 컴포넌트
-    participant Supabase as Supabase Client
-    participant KakaoAuth as Kakao OAuth
-    participant AuthCallback as /auth/callback
-    participant HomePage as 홈페이지
-
-    Note over User, HomePage: 사전 설정 완료 (Kakao Developer + Supabase Provider 설정)
-
-    Note over User, HomePage: 1. 로그인 시작
-    User->>SignIn: 카카오 로그인 버튼 클릭
-    SignIn->>Supabase: supabase.auth.signInWithOAuth({<br/>  provider: 'kakao',<br/>  options: {<br/>    redirectTo: `${origin}/auth/callback`<br/>  }<br/>})
-
-    Note over User, HomePage: 2. 카카오 인증 페이지 이동
-    Supabase->>User: 카카오 OAuth URL로 리다이렉트
-    User->>KakaoAuth: 카카오 로그인 페이지 접근
-
-    Note over User, HomePage: 3. 사용자 인증 및 동의
-    KakaoAuth->>User: 동의 항목 화면 표시<br/>(닉네임, 프로필사진, 이메일 등)
-    User->>KakaoAuth: 동의 및 로그인 완료
-
-    Note over User, HomePage: 4. 콜백 처리
-    KakaoAuth->>AuthCallback: authorization code와 함께<br/>/auth/callback으로 리다이렉트
-    AuthCallback->>Supabase: supabase.auth.exchangeCodeForSession(code)
-    Supabase->>KakaoAuth: Access Token 요청
-    KakaoAuth->>Supabase: Access Token 및 사용자 정보 반환
-
-    Note over User, HomePage: 5. 세션 생성 및 사용자 정보 저장
-    Supabase->>Supabase: 사용자 계정 생성/업데이트<br/>(users.auth 테이블)
-    Supabase->>AuthCallback: 세션 정보 반환
-    AuthCallback->>HomePage: 성공 시 홈페이지로 리다이렉트
-
-    Note over User, HomePage: 6. 로그인 완료
-    HomePage->>Supabase: 현재 세션 확인<br/>(supabase.auth.getSession())
-    Supabase->>HomePage: 사용자 세션 정보 반환
-    HomePage->>User: 로그인된 상태로 홈페이지 표시
-
-    Note over User, HomePage: 7. 후속 요청 (인증 상태 유지)
-    User->>HomePage: 페이지 새로고침 또는 재방문
-    HomePage->>Supabase: 세션 확인
-    Supabase->>HomePage: 유효한 세션 정보 반환
-    HomePage->>User: 로그인 상태 유지하여 페이지 표시
-```
 
 ```tsx
 async function signInWithKakao() {
