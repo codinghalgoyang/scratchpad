@@ -1,4 +1,4 @@
-## 카카오 인증 with supabace
+## 카카오 인증 with supabase
 
 ## 전체 흐름이 어떻게 될까?
 
@@ -57,6 +57,14 @@ Next.js + Supabase에서 Kakao 로그인의 전체 흐름을 요청-응답 쌍�
 
 ---
 
+## supabase 환경설정
+
+```bash
+npm install @supabase/supabase-js 
+```
+
+---
+
 > supabase에서 나 대신 인증을 하고(supabse <-> kakao), 내 사이트를 redirection url로 해서 인증 결과를 받고, 인증 관련 database등은 supabase에서 관리해줌.
 
 자료 : https://euni8917.tistory.com/m/575
@@ -108,3 +116,52 @@ export async function GET(request: Request) {
   return NextResponse.redirect(`${origin}/auth/auth-code-error`);
 }
 ```
+
+---
+
+## 설정
+
+#### supabase 프로젝트 생성
+
+- supabase > new project
+  - Project name : 프로젝트 이름
+  - Database Password : Generate a password 사용 (크게 쓸 일 없고, 나중에 변경 가능)
+  - Region : 서비스 지역 선택
+
+## supabase & 카카오 개발자 연동
+
+#### [supabase](https://supabase.com/)의 카카오 콜백 URI 값 확인
+
+- `SUPABASE_KAKAO_CALLBACK_URI` : Authentication > Sign In / Providers > Kakao > Callback URL
+
+```
+아래 내용이 필요한지 확실하지 않음
+#### supabase redirect URLs 등록
+
+- `VERCEL_URL` : vercel > project 선택 > domains
+- supabase > 프로젝트 선택 > Authentication > URL Configuration > Redirect URLs > Add URL
+  - `http://localhost:3000/auth/callback`
+  - `{VERCEL_URL}/auth/callback`
+```
+
+#### 카카오 개발자 사이트 프로젝트 생성 및 설정
+
+- 프로젝트 생성 : 앱이름, 회사명, 카테고리 선택 후 저장
+- 비즈앱 전환
+  - 프로젝트 > 비즈니스 > 앱아이콘 등록 (아무거나)
+  - 프로젝트 > 비즈니스 > 개인 개발자 비즈 앱 전환 > 목적 : 이메일 필수 로 해서 신청
+- 앱 키 확인
+  - `KAKAO_REST_API_KEY` : 프로젝트 > 앱 키 > REST API 키
+- 카카오 로그인 설정 :
+  - 프로젝트 > 카카오 로그인 > 활성화 상태 On
+  - 프로젝트 > 카카오 로그인 > Redirect URI : supabase의 `SUPABASE_KAKAO_CALLBACK_URI`를 등록
+  - 프로젝트 > 동의항목 (카카오 로그인)
+    - 닉네임, 프로필 사진, 카카오 계정등 > 설정 > 필수 동의 > 동의목적 작성 > 저장
+  - `KAKAO_CLIENT_SECRET` : 프로젝트 > 보안 (카카오 로그인) > 코드 생성
+
+#### supabase Authentication > Sign In / Providers > Kakao 설정
+
+- Kakao enabled : true
+- REST API Key : `KAKAO_REST_API_KEY`
+- Client Secret Code : `KAKAO_CLIENT_SECRET`
+- Save 클릭
