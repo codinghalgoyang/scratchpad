@@ -141,6 +141,8 @@ export async function GET(request: Request) {
 - 그럼 브라우저가 내 서비스의 인덱스 페이지를 다시 요청하게 된것이니, KakaoSignInButton의 useEffect(()=>{},[]) 부분도 다시 불리게 됨.
 - 그럼, 이때는 loadSession()에서 유저 정보를 얻을 수 있어서 유저정보를 콘솔로 찍게됨
 
+> redirectTo를 `/auth/callback`이 아닌 `/`로 하면 더 간단한거 아닌가? `/auth/callback/router.ts`에서 인증 결과 확인 후 올바른 경우에만 인덱스 페이지로 넘어가고, 그렇지 않은 경우 error 페이지를 보이기위해 이렇게 처리한 것 같다
+
 #### app/auth/error/page.tsx
 
 ```tsx
