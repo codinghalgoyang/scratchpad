@@ -8,12 +8,12 @@
 
 #### supbase redirect URLs 등록
 
-> 이 부분이 내용상은 필요할 것 같긴한데, 내가 찾아본 자료에서는 이걸 언급하는 부분이 없어서 필요한지 확실하지는 않음
+> 이 부분은 나중에 production 상황에서 필요한 부분이나 미리 등록
 
 - `VERCEL_URL` : vercel > project 선택 > domains
 - supabase > 프로젝트 선택 > Authentication > URL Configuration > Redirect URLs > Add URL
-  - `http://localhost:3000/auth/callback`
-  - `{VERCEL_URL}/auth/callback`
+  - `http://localhost:3000/**`
+  - `{VERCEL_URL}/**`
 
 #### 카카오 개발자 사이트 프로젝트 생성 및 설정
 
@@ -87,6 +87,8 @@ const signInWithKakao = async () => {
         : "http://localhost:3000/auth/callback",
     },
   });
+  console.log("data : ", data);
+  console.log("error : ", error);
 };
 
 export default function KakaoSignInButton() {
@@ -98,6 +100,7 @@ export default function KakaoSignInButton() {
       } = await supabase.auth.getSession();
 
       console.log(session?.user);
+      console.log("error : ", error);
     };
     loadSession();
   }, []);
@@ -146,13 +149,7 @@ export async function GET(request: Request) {
 #### app/auth/error/page.tsx
 
 ```tsx
-export default async function ErrorPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ error: string }>;
-}) {
-  const params = await searchParams;
-
+export default async function ErrorPage() {
   return (
     <main className="min-h-screen flex flex-col items-center">
       <div>Error Page</div>
