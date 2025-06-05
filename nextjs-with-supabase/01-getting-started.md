@@ -68,6 +68,8 @@ NEXT_PUBILC_SUPABASE_ANON_KEY={supabse > 프로젝트 > 설정 > API Keys > anon
 
 #### vercel 환경변수 설정
 
+> 개발 중에는 필요하지 않지만, 배포를 위해 미리 등록함
+
 - vercel > 프로젝트 > Settings > Environment Variables
 - Production 선택 (Preview, Development 해제)
 - Sensitive : Enabled
