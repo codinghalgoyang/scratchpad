@@ -60,7 +60,7 @@ Next.js + Supabase에서 Kakao 로그인의 전체 흐름을 요청-응답 쌍�
 ## supabase 환경설정
 
 ```bash
-npm install @supabase/supabase-js 
+npm install @supabase/supabase-js
 ```
 
 ---
@@ -165,3 +165,5 @@ export async function GET(request: Request) {
 - REST API Key : `KAKAO_REST_API_KEY`
 - Client Secret Code : `KAKAO_CLIENT_SECRET`
 - Save 클릭
+
+#### supabase 설정
