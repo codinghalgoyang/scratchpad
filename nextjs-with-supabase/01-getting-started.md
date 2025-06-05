@@ -48,6 +48,42 @@ npm run dev
 
 - Vercel > 프로필 > Dashboard > 프로젝트 선택 > Domains
 
-#### 참고자료
+## Step 3. supabase 프로젝트 생성
+
+- supabase > new project
+  - Project name : 프로젝트 이름
+  - Database Password : Generate a password 사용 (크게 쓸 일 없고, 나중에 변경 가능)
+  - Region : 서비스 지역 선택
+
+## Step 4. 환경변수 설정
+
+#### 로컬 서버 환경변수 설정
+
+파일 이름 변경 후 내용 수정 : .env.example -> .env.local
+
+```
+NEXT_PUBLIC_SUPABASE_URL={supabse > 프로젝트 > 설정 > Data API > Project URL > URL}
+NEXT_PUBILC_SUPABASE_ANON_KEY={supabse > 프로젝트 > 설정 > API Keys > anon}
+```
+
+#### vercel 환경변수 설정
+
+- vercel > 프로젝트 > Settings > Environment Variables
+- Production 선택 (Preview, Development 해제)
+- Sensitive : Enabled
+- 위의 환경변수(NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBILC_SUPABASE_ANON_KEY) 추가
+- Save 클릭
+- Redeploy 클릭
+
+## Step 5. 서버 재시작 및 브로우저 새로고침
+
+````bash
+npm run dev
+```
+
+- 서버 재시작 후 브라우저 새로고침을 하면 페이지가 변경됨
+
+## 참고자료
 
 - [Use supabase with Next.js - supabase DOCS]https://supabase.com/docs/guides/getting-started/quickstarts/nextjs
+````
